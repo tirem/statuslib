@@ -413,7 +413,7 @@ end
 
 
 -- The usual packet event doesn't register in libs but this __settings one does. Feels bad.
-ashita.events.register('packet_in', '__settings_packet_in_cb', function (e)
+ashita.events.register('packet_in', '__status_packet_in_cb', function (e)
     
 	if (e.id == 0x076) then
 		statusTracker.HandlePartyUpdatePacket(e);
