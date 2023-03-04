@@ -4,170 +4,13 @@
 
 require('common');
 local statusTable = require('status.statustable');
+local helpers = require('status.statushelpers');
 
 -- TO DO: Audit these messages for which ones are actually useful
 local statusOnMes = T{160, 164, 166, 186, 194, 203, 205, 230, 236, 266, 267, 268, 269, 237, 271, 272, 277, 278, 279, 280, 319, 320, 375, 412, 645, 754, 755, 804};
 local statusOffMes = T{206, 64, 159, 168, 204, 206, 321, 322, 341, 342, 343, 344, 350, 378, 531, 647, 805, 806};
 local deathMes = T{6, 20, 97, 113, 406, 605, 646};
 local spellDamageMes = T{2, 252, 264, 265};
-
-local function GetPartyMemberIds()
-	local partyMemberIds = T{};
-	local party = AshitaCore:GetMemoryManager():GetParty();
-	for i = 0, 5 do
-		if (party:GetMemberIsActive(i) == 1) then
-			table.insert(partyMemberIds, party:GetMemberServerId(i));
-		end
-	end
-	return partyMemberIds;
-end
-
-local function GetIsMob(index)
-	return (bit.band(AshitaCore:GetMemoryManager():GetEntity():GetSpawnFlags(index), 0x10) ~= 0);
-end
-
-local function GetIsValidMob(mobIdx)
-    local renderflags = AshitaCore:GetMemoryManager():GetEntity():GetRenderFlags0(mobIdx);
-    if bit.band(renderflags, 0x200) ~= 0x200 or bit.band(renderflags, 0x4000) ~= 0 then
-        return false;
-    end
-	return true;
-end
-
-
-local function GetIndexFromId(id)
-    local entMgr = AshitaCore:GetMemoryManager():GetEntity();
-    
-    --Shortcut for monsters/static npcs..
-    if (bit.band(id, 0x1000000) ~= 0) then
-        local index = bit.band(id, 0xFFF);
-        if (index >= 0x900) then
-            index = index - 0x100;
-        end
-
-        if (index < 0x900) and (entMgr:GetServerId(index) == id) then
-            return index;
-        end
-    end
-
-    for i = 1,0x8FF do
-        if entMgr:GetServerId(i) == id then
-            return i;
-        end
-    end
-
-    return 0;
-end
-
-local function ParseActionPacket(e)
-    local bitData;
-    local bitOffset;
-    local maxLength = e.size * 8;
-    local function UnpackBits(length)
-        if ((bitOffset + length) >= maxLength) then
-            maxLength = 0; --Using this as a flag since any malformed fields mean the data is trash anyway.
-            return 0;
-        end
-        local value = ashita.bits.unpack_be(bitData, 0, bitOffset, length);
-        bitOffset = bitOffset + length;
-        return value;
-    end
-
-    local actionPacket = T{};
-    bitData = e.data_raw;
-    bitOffset = 40;
-    actionPacket.UserId = UnpackBits(32);
-    actionPacket.UserIndex = GetIndexFromId(actionPacket.UserId); --Many implementations of this exist, or you can comment it out if not needed.  It can be costly.
-    local targetCount = UnpackBits(6);
-    --Unknown 4 bits
-    bitOffset = bitOffset + 4;
-    actionPacket.Type = UnpackBits(4);
-    -- Bandaid fix until we have more flexible packet parsing
-    if actionPacket.Type == 8 or actionPacket.Type == 9 then
-        actionPacket.Param = UnpackBits(16);
-        actionPacket.SpellGroup = UnpackBits(16);
-    else
-        -- Not every action packet has the same data at the same offsets so we just skip this for now
-        actionPacket.Param = UnpackBits(32);
-    end
-
-    actionPacket.Recast = UnpackBits(32);
-
-    actionPacket.Targets = T{};
-    if (targetCount > 0) then
-        for i = 1,targetCount do
-            local target = T{};
-            target.Id = UnpackBits(32);
-            local actionCount = UnpackBits(4);
-            target.Actions = T{};
-            if (actionCount == 0) then
-                break;
-            else
-                for j = 1,actionCount do
-                    local action = {};
-                    action.Reaction = UnpackBits(5);
-                    action.Animation = UnpackBits(12);
-                    action.SpecialEffect = UnpackBits(7);
-                    action.Knockback = UnpackBits(3);
-                    action.Param = UnpackBits(17);
-                    action.Message = UnpackBits(10);
-                    action.Flags = UnpackBits(31);
-
-                    local hasAdditionalEffect = (UnpackBits(1) == 1);
-                    if hasAdditionalEffect then
-                        local additionalEffect = {};
-                        additionalEffect.Damage = UnpackBits(10);
-                        additionalEffect.Param = UnpackBits(17);
-                        additionalEffect.Message = UnpackBits(10);
-                        action.AdditionalEffect = additionalEffect;
-                    end
-
-                    local hasSpikesEffect = (UnpackBits(1) == 1);
-                    if hasSpikesEffect then
-                        local spikesEffect = {};
-                        spikesEffect.Damage = UnpackBits(10);
-                        spikesEffect.Param = UnpackBits(14);
-                        spikesEffect.Message = UnpackBits(10);
-                        action.SpikesEffect = spikesEffect;
-                    end
-
-                    target.Actions:append(action);
-                end
-            end
-            actionPacket.Targets:append(target);
-        end
-    end
-
-    if  (maxLength ~= 0) and (#actionPacket.Targets > 0) then
-        return actionPacket;
-    end
-end
-
-local function ParseMobUpdatePacket(e)
-	if (e.id == 0x00E) then
-		local mobPacket = T{};
-		mobPacket.monsterId = struct.unpack('L', e.data, 0x04 + 1);
-		mobPacket.monsterIndex = struct.unpack('H', e.data, 0x08 + 1);
-		mobPacket.updateFlags = struct.unpack('B', e.data, 0x0A + 1);
-		if (bit.band(mobPacket.updateFlags, 0x02) == 0x02) then
-			mobPacket.newClaimId = struct.unpack('L', e.data, 0x2C + 1);
-		end
-		return mobPacket;
-	end
-end
-
-local function ParseMessagePacket(e)
-    local basic = {
-        sender     = struct.unpack('i4', e, 0x04 + 1),
-        target     = struct.unpack('i4', e, 0x08 + 1),
-        param      = struct.unpack('i4', e, 0x0C + 1),
-        value      = struct.unpack('i4', e, 0x10 + 1),
-        sender_tgt = struct.unpack('i2', e, 0x14 + 1),
-        target_tgt = struct.unpack('i2', e, 0x16 + 1),
-        message    = struct.unpack('i2', e, 0x18 + 1),
-    }
-    return basic
-end
 
 -------------------------------------------------------------------------------
 -- exported functions
@@ -178,26 +21,15 @@ local statusTracker = {
     relevantTargets = T{}; -- targets by targetIndex that are relevant to the player
 };
 
--- Get if we are logged in right when the library is accessed
-statusTracker.bLoggedIn = false;
-local playerIndex = AshitaCore:GetMemoryManager():GetParty():GetMemberTargetIndex(0);
-if playerIndex ~= 0 then
-    local entity = AshitaCore:GetMemoryManager():GetEntity();
-    local flags = entity:GetRenderFlags0(playerIndex);
-    if (bit.band(flags, 0x200) == 0x200) and (bit.band(flags, 0x4000) == 0) then
-        statusTracker.bLoggedIn = true;
-	end
-end
-
 -- if a mob updates its claimid to be us or a party member add it to the list
 statusTracker.HandleMobUpdatePacket = function(e)
-    local mobUpdate = ParseMobUpdatePacket(e);
+    local mobUpdate = helpers.ParseMobUpdatePacket(e);
 	if (mobUpdate == nil) then 
 		return; 
 	end
-    if (GetIsValidMob(mobUpdate.monsterIndex)) then
+    if (helpers.GetIsValidMob(mobUpdate.monsterIndex)) then
         if (mobUpdate.newClaimId ~= nil) then	
-            local partyMemberIds = GetPartyMemberIds();
+            local partyMemberIds = helpers.GetPartyMemberIds();
             if ((partyMemberIds:contains(mobUpdate.newClaimId))) then
                 statusTracker.relevantTargets[mobUpdate.monsterIndex] = 1;
             end
@@ -209,16 +41,16 @@ end
 
 statusTracker.HandleActionPacket = function(e)
 
-    local action = ParseActionPacket(e);
+    local action = helpers.ParseActionPacket(e);
     if (action == nil) then
         return;
     end
 
-    local relevantTarget = GetIsMob(action.UserIndex) and GetIsValidMob(action.UserIndex);
+    local relevantTarget = helpers.GetIsMob(action.UserIndex) and helpers.GetIsValidMob(action.UserIndex);
 
     local now = os.time()
 
-    local partyMemberIds = GetPartyMemberIds();
+    local partyMemberIds = helpers.GetPartyMemberIds();
     for _, target in pairs(action.Targets) do
         -- Update our relvant enemies first
         if (relevantTarget and partyMemberIds:contains(target.Id)) then
@@ -370,7 +202,7 @@ end
 
 statusTracker.HandleClearMessage = function(e)
 
-    local parsedPacket = ParseMessagePacket(e.data)
+    local parsedPacket = helpers.ParseMessagePacket(e.data)
     if (parsedPacket == nil) then
         return;
     end
@@ -398,7 +230,7 @@ statusTracker.GetStatusEffects = function(serverId)
     end
 
     -- If this is a party member just return the party member
-    if (GetPartyMemberIds():contains(serverId)) then
+    if (helpers.GetPartyMemberIds():contains(serverId)) then
         return statusTracker.partyBuffs[serverId];
     end
 
@@ -425,20 +257,17 @@ end
 -- The usual packet event doesn't register in libs but this __settings one does. Feels bad.
 ashita.events.register('packet_in', '__status_packet_in_cb', function (e)
     
-	if (e.id == 0x076) then
-		statusTracker.HandlePartyUpdatePacket(e);
+    if (e.id == 0x076) then
+        statusTracker.HandlePartyUpdatePacket(e);
     elseif (e.id == 0x00A) then -- Clear everything on zone
         statusTracker.trackedEntities = T{};
         statusTracker.relevantTargets = T{};
-        statusTracker.bLoggedIn = true;
-	elseif (e.id == 0x0029) then
-		statusTracker.HandleClearMessage(e);
+    elseif (e.id == 0x0029) then
+        statusTracker.HandleClearMessage(e);
     elseif (e.id == 0x0028) then
         statusTracker.HandleActionPacket(e);
     elseif (e.id == 0x00E) then
         statusTracker.HandleMobUpdatePacket(e);
-	elseif (e.id == 0x00B) then
-        statusTracker.bLoggedIn = false;
     end
 end);
 
