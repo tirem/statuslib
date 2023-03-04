@@ -179,6 +179,17 @@ local statusTracker = {
     relevantTargets = T{}; -- targets by targetIndex that are relevant to the player
 };
 
+-- Get if we are logged in right when the library is accessed
+statusTracker.bLoggedIn = false;
+local playerIndex = AshitaCore:GetMemoryManager():GetParty():GetMemberTargetIndex(0);
+if playerIndex ~= 0 then
+    local entity = AshitaCore:GetMemoryManager():GetEntity();
+    local flags = entity:GetRenderFlags0(playerIndex);
+    if (bit.band(flags, 0x200) == 0x200) and (bit.band(flags, 0x4000) == 0) then
+        statusTracker.bLoggedIn = true;
+	end
+end
+
 -- if a mob updates its claimid to be us or a party member add it to the list
 statusTracker.HandleMobUpdatePacket = function(e)
     local mobUpdate = ParseMobUpdatePacket(e);
@@ -420,12 +431,15 @@ ashita.events.register('packet_in', '__status_packet_in_cb', function (e)
     elseif (e.id == 0x00A) then -- Clear everything on zone
         statusTracker.trackedEntities = T{};
         statusTracker.relevantTargets = T{};
+        statusTracker.bLoggedIn = true;
 	elseif (e.id == 0x0029) then
 		statusTracker.HandleClearMessage(e);
     elseif (e.id == 0x0028) then
         statusTracker.HandleActionPacket(e);
     elseif (e.id == 0x00E) then
         statusTracker.HandleMobUpdatePacket(e);
+	elseif (e.id == 0x00B) then
+        statusTracker.bLoggedIn = false;
     end
 end);
 
