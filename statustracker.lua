@@ -3,7 +3,6 @@
 ]]--
 
 require('common');
-require('helpers');
 local statusTable = require('status.statustable');
 
 -- TO DO: Audit these messages for which ones are actually useful
