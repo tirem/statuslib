@@ -31,7 +31,7 @@ statusHelper.GetMenuName = function()
     end
     local menuHeader = ashita.memory.read_uint32(subValue + 4);
     local menuName = ashita.memory.read_string(menuHeader + 0x46, 16);
-    return string.gsub(menuName, '\x00', '');
+    return string.gsub(tostring(menuName), '\x00', '');
 end
 
 statusHelper.GetEventSystemActive = function()
