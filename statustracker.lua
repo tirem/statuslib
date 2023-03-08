@@ -222,11 +222,19 @@ statusTracker.HandleClearMessage = function(e)
     end
 end
 
-statusTracker.GetStatusEffects = function(serverId)
+local function FilterPlayerBuffs(PlayerBuffs)
+    local filteredBuffs = T{};
+    for _,v in pairs(PlayerBuffs) do
+        if (v == -1) then break; end
+        table.insert(filteredBuffs, v);
+    end
+    return filteredBuffs;
+end
 
+statusTracker.GetStatusEffects = function(serverId)
     -- If this is just the player return the buffs in memory
 	if (serverId == AshitaCore:GetMemoryManager():GetParty():GetMemberServerId(0)) then
-        return AshitaCore:GetMemoryManager():GetPlayer():GetBuffs();
+        return FilterPlayerBuffs(AshitaCore:GetMemoryManager():GetPlayer():GetBuffs());
     end
 
     -- If this is a party member just return the party member
