@@ -145,7 +145,7 @@ statusTracker.ReadPartyBuffsFromMemory = function()
             local empty = false;
             for buffIndex = 0,31 do
                 if empty then
-                    buffs[buffIndex + 1] = -1;
+                    buffs[buffIndex + 1] = nil;
                 else
                     local highBits = ashita.memory.read_uint8(memberPtr + 8 + (math.floor(buffIndex / 4)));
                     local fMod = math.fmod(buffIndex, 4) * 2;
@@ -154,7 +154,7 @@ statusTracker.ReadPartyBuffsFromMemory = function()
                     local buff = highBits + lowBits;
                     if buff == 255 then
                         empty = true;
-                        buffs[buffIndex + 1] = -1;
+                        buffs[buffIndex + 1] = nil;
                     else
                         buffs[buffIndex + 1] = buff;
                     end
