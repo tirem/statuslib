@@ -26,7 +26,7 @@ local id_overrides = T{
 -- load a dummy icon placeholder for a missing status and return a texture pointer
 ---@return ffi.cdata* texture_ptr the loaded texture object or nil on error
 local function load_dummy_icon()
-    local icon_path = ('%s\\addons\\libs\\status\\resources\\dummy.png'):fmt(AshitaCore:GetInstallPath());
+    local icon_path = ('%s\\libs\\status\\resources\\dummy.png'):fmt(addon.path);
     local dx_texture_ptr = ffi.new('IDirect3DTexture8*[1]');
 
     if (ffi.C.D3DXCreateTextureFromFileA(d3d8_device, icon_path, dx_texture_ptr) == ffi.C.S_OK) then
@@ -76,7 +76,7 @@ local function load_status_icon_from_theme(status_id, theme)
         end
 
         supports_alpha = ext == '.png';
-        icon_path = ('%s\\addons\\libs\\status\\resources\\%s\\%d'):append(ext):fmt(AshitaCore:GetInstallPath(), theme, status_id);
+        icon_path = ('%s\\libs\\status\\resources\\%s\\%d'):append(ext):fmt(addon.path, theme, status_id);
         local handle = io.open(icon_path, 'r');
         if (handle ~= nil) then
             handle.close();
@@ -111,7 +111,7 @@ local statusIcons = {};
 -- return a list of all sub directories
 ---@return table theme_paths
 statusIcons.get_status_theme_paths = function()
-    local path = ('%s\\addons\\libs\\status\\resources'):fmt(AshitaCore:GetInstallPath());
+    local path = ('%s\\libs\\status\\resources'):fmt(addon.path);
     return ashita.fs.get_directory(path);
 end 
 

@@ -5,12 +5,12 @@
 
 require('common');
 
-local icons = require('status.statusicons');
-local tracker = require('status.statustracker');
+local icons = require('libs/status/statusicons');
+local tracker = require('libs/status/statustracker');
 
 local status = T{};
 
-status.helpers = require('status.statushelpers');
+status.helpers = require('libs/status/statushelpers');
 
 status.GetStatusIdsById = function(ServerId)
     return tracker.GetStatusEffects(ServerId);

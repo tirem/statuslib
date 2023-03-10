@@ -3,7 +3,7 @@
 ]]--
 
 require('common');
-local tables = require('status.statustable');
+local tables = require('libs/status/statustable');
 
 local statusHelper = T{};
 

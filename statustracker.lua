@@ -3,8 +3,8 @@
 ]]--
 
 require('common');
-local statusTable = require('status.statustable');
-local helpers = require('status.statushelpers');
+local statusTable = require('libs/status/statustable');
+local helpers = require('libs/status/statushelpers');
 
 -- TO DO: Audit these messages for which ones are actually useful
 local statusOnMes = T{160, 164, 166, 186, 194, 203, 205, 230, 236, 266, 267, 268, 269, 237, 271, 272, 277, 278, 279, 280, 319, 320, 375, 412, 645, 754, 755, 804};
