@@ -179,14 +179,14 @@ statusTracker.HandlePartyUpdatePacket = function(e)
             local empty = false;
             for j = 0,31 do
                 if empty then
-                    buffs[j + 1] = -1;
+                    buffs[j + 1] = nil;
                 else
                     --This is at offset 8 from member start.. memberoffset is using +1 for the lua struct.unpacks
                     local highBits = bit.lshift(ashita.bits.unpack_be(e.data_raw, memberOffset + 7, j * 2, 2), 8);
                     local lowBits = struct.unpack('B', e.data, memberOffset + 0x10 + j);
                     local buff = highBits + lowBits;
                     if (buff == 255) then
-                        buffs[j + 1] = -1;
+                        buffs[j + 1] = nil;
                         empty = true;
                     else
                         buffs[j + 1] = buff;
