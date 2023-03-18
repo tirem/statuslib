@@ -3,8 +3,13 @@
 ]]--
 
 require('common');
-local statusTable = require('libs/status/statustable');
-local helpers = require('libs/status/statushelpers');
+local function GetLibPath()
+    return string.gsub(debug.getinfo(2, "S").source:sub(2), addon.path, '');
+end
+
+local libPath = GetLibPath();
+local statusTable = require(string.gsub(libPath, 'statustracker.lua', 'statustable'));
+local helpers = require(string.gsub(libPath, 'statustracker.lua', 'statushelpers'));
 
 -- TO DO: Audit these messages for which ones are actually useful
 local statusOnMes = T{160, 164, 166, 186, 194, 203, 205, 230, 236, 266, 267, 268, 269, 237, 271, 272, 277, 278, 279, 280, 319, 320, 375, 412, 645, 754, 755, 804};

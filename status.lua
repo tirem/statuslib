@@ -4,9 +4,13 @@
 ]]--
 
 require('common');
+local function GetLibPath()
+    return string.gsub(debug.getinfo(2, "S").source:sub(2), addon.path, '');
+end
 
-local icons = require('libs/status/statusicons');
-local tracker = require('libs/status/statustracker');
+local libPath = GetLibPath();
+local icons = require(string.gsub(libPath, 'status.lua', 'statusicons'));
+local tracker = require(string.gsub(libPath, 'status.lua', 'statustracker'));
 
 local status = T{};
 

@@ -3,7 +3,12 @@
 ]]--
 
 require('common');
-local tables = require('libs/status/statustable');
+local function GetLibPath()
+    return string.gsub(debug.getinfo(2, "S").source:sub(2), addon.path, '');
+end
+
+local libPath = GetLibPath();
+local tables = require(string.gsub(libPath, 'statushelpers.lua', 'statustable'));
 
 local statusHelper = T{};
 
