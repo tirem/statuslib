@@ -3,12 +3,6 @@
 ]]--
 
 require('common');
-local function GetLibPath()
-    return string.gsub(debug.getinfo(2, "S").source:sub(2), addon.path, '');
-end
-
-local libPath = GetLibPath();
-local tables = require(string.gsub(libPath, 'statushelpers.lua', 'statustable'));
 
 local statusHelper = T{};
 
@@ -272,22 +266,22 @@ end
 
 -- Gets if a status effect is technically a positive status effect
 statusHelper.GetIsBuff = function(StatusId)
-    return tables.IsBuff(StatusId);
+    return statusTable.IsBuff(StatusId);
 end
 
 -- Gets if a job is a spellcaster (uses MP) by their job abberviation
 statusHelper.GetIsSpellcaster = function(JobAbv)
-    return tables.IsSpellcaster(JobAbv);
+    return statusTable.IsSpellcaster(JobAbv);
 end
 
 -- Gets if a pet is a job by by the pet name
 statusHelper.GetIsJugPet = function(PetName)
-    return tables.IsJugPet(PetName);
+    return statusTable.IsJugPet(PetName);
 end
 
 -- Get a jobs SP (1, 2 hr) ability name by its job abberviation
 statusHelper.GetSpAbilityName = function(JobAbv)
-    return tables.GetSPAbilityName(JobAbv);
+    return statusTable.GetSPAbilityName(JobAbv);
 end
 
 -- The usual packet event doesn't register in libs but this __settings one does. Feels bad.

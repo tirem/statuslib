@@ -3,13 +3,6 @@
 ]]--
 
 require('common');
-local function GetLibPath()
-    return string.gsub(debug.getinfo(2, "S").source:sub(2), addon.path, '');
-end
-
-local libPath = GetLibPath();
-local statusTable = require(string.gsub(libPath, 'statustracker.lua', 'statustable'));
-local helpers = require(string.gsub(libPath, 'statustracker.lua', 'statushelpers'));
 
 -- TO DO: Audit these messages for which ones are actually useful
 local statusOnMes = T{160, 164, 166, 186, 194, 203, 205, 230, 236, 266, 267, 268, 269, 237, 271, 272, 277, 278, 279, 280, 319, 320, 375, 412, 645, 754, 755, 804};
@@ -28,13 +21,13 @@ local statusTracker = {
 
 -- if a mob updates its claimid to be us or a party member add it to the list
 statusTracker.HandleMobUpdatePacket = function(e)
-    local mobUpdate = helpers.ParseMobUpdatePacket(e);
+    local mobUpdate = statusHelpers.ParseMobUpdatePacket(e);
 	if (mobUpdate == nil) then 
 		return; 
 	end
-    if (helpers.GetIsValidMob(mobUpdate.monsterIndex)) then
+    if (statusHelpers.GetIsValidMob(mobUpdate.monsterIndex)) then
         if (mobUpdate.newClaimId ~= nil) then	
-            local partyMemberIds = helpers.GetPartyMemberIds();
+            local partyMemberIds = statusHelpers.GetPartyMemberIds();
             if ((partyMemberIds:contains(mobUpdate.newClaimId))) then
                 statusTracker.relevantTargets[mobUpdate.monsterIndex] = 1;
             end
@@ -46,16 +39,16 @@ end
 
 statusTracker.HandleActionPacket = function(e)
 
-    local action = helpers.ParseActionPacket(e);
+    local action = statusHelpers.ParseActionPacket(e);
     if (action == nil) then
         return;
     end
 
-    local relevantTarget = helpers.GetIsMob(action.UserIndex) and helpers.GetIsValidMob(action.UserIndex);
+    local relevantTarget = statusHelpers.GetIsMob(action.UserIndex) and statusHelpers.GetIsValidMob(action.UserIndex);
 
     local now = os.time()
 
-    local partyMemberIds = helpers.GetPartyMemberIds();
+    local partyMemberIds = statusHelpers.GetPartyMemberIds();
     for _, target in pairs(action.Targets) do
         -- Update our relvant enemies first
         if (relevantTarget and partyMemberIds:contains(target.Id)) then
@@ -207,7 +200,7 @@ end
 
 statusTracker.HandleClearMessage = function(e)
 
-    local parsedPacket = helpers.ParseMessagePacket(e.data)
+    local parsedPacket = statusHelpers.ParseMessagePacket(e.data)
     if (parsedPacket == nil) then
         return;
     end
@@ -243,7 +236,7 @@ statusTracker.GetStatusEffects = function(serverId)
     end
 
     -- If this is a party member just return the party member
-    if (helpers.GetPartyMemberIds():contains(serverId)) then
+    if (statusHelpers.GetPartyMemberIds():contains(serverId)) then
         return statusTracker.partyBuffs[serverId];
     end
 

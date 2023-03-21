@@ -2,22 +2,23 @@
 --[[
 * Copyright (c) 2023 tirem [github.com/tirem] under the GPL-3.0 license
 ]]--
-
+  
 require('common');
 local function GetLibPath()
-    return string.gsub(debug.getinfo(2, "S").source:sub(2), addon.path, '');
+    return debug.getinfo(2, "S").source:sub(2);
 end
 
+-- Setup globals for addons and rest of lib to access
 local libPath = GetLibPath();
-local icons = require(string.gsub(libPath, 'status.lua', 'statusicons'));
-local tracker = require(string.gsub(libPath, 'status.lua', 'statustracker'));
+statusIcons = dofile(string.gsub(libPath, 'status.lua', 'statusicons.lua'));
+statusTracker = dofile(string.gsub(libPath, 'status.lua', 'statustracker.lua'));
+statusTable = dofile(string.gsub(libPath, 'status.lua', 'statustable.lua'));
+statusHelpers = dofile(string.gsub(libPath, 'status.lua', 'statushelpers.lua'));
 
 local status = T{};
 
-status.helpers = require('libs/status/statushelpers');
-
 status.GetStatusIdsById = function(ServerId)
-    return tracker.GetStatusEffects(ServerId);
+    return statusTracker.GetStatusEffects(ServerId);
 end
 
 status.GetStatusIdsByIndex = function(TargetIndex)
@@ -55,9 +56,9 @@ end
 
 status.GetIconForStatusId = function(StatusId, Theme)
     if (Theme == nil) then
-        return icons.get_icon_image(StatusId);
+        return statusIcons.get_icon_image(StatusId);
     else
-        return icons.get_icon_from_theme(StatusId, Theme);
+        return statusIcons.get_icon_from_theme(StatusId, Theme);
     end
 end
 
@@ -80,15 +81,15 @@ status.GetTooptipForStatusId = function(StatusId)
 end
 
 status.GetRelevantEnemies = function()
-    return tracker.GetRelevantTargets();
+    return statusTracker.GetRelevantTargets();
 end
 
 status.ClearIconCache = function()
-    icons.clear_cache();
+    statusIcons.clear_cache();
 end
 
 status.GetIconThemePaths = function()
-    return icons.get_status_theme_paths();
+    return statusIcons.get_status_theme_paths();
 end
 
 return status;

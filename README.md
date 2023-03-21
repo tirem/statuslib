@@ -8,5 +8,5 @@ If you would like to show your support for my addon and library creation conside
 
 ## Overview ##
 * This library expects to live within the directory ```[yourAddon]/libs/status```
-* You can initialize the full statustracker with ```local statuslib = require('libs/status/status');```. Helpers are then available with ```statuslib.helpers.[FunctionName]```
+* You can initialize the full statustracker with ```local statuslib = require('libs/status/status');```. Helpers are then available with ```statusHelpers.[FunctionName]```
 * If you would like to just use the helpers included with this lib without initializing tracking you can use ```local statusHelpers = require('libs/status/statushelpers');```
